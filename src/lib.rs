@@ -2,19 +2,19 @@ pub mod Helper{
     use std::{any::Any, collections::HashMap, process::exit};
 
     #[derive(Debug,Clone)]
-    pub struct CLI{
-        pub args: HashMap<String,&'static dyn Any>,
-        flag_map: HashMap<String,(Vec<&'static str>,fn (&'static dyn Any) -> &'static dyn Any)>,
-        parse_map: HashMap<&'static str,fn (&str) -> &'static dyn Any>,
+    pub struct CLI<'a>{
+        pub args: HashMap<String,&'a dyn Any>,
+        flag_map: HashMap<String,(Vec<&'a str>,for<'b> fn (&'b dyn Any) -> &'b dyn Any)>,
+        parse_map: HashMap<&'a str,fn (&str) -> &'a dyn Any>,
         pub preproc: Option<fn (Vec<String>) -> Vec<String>>,
         pub help_fxn: fn(),
         pub iter_fxn: Option<fn()>,
-        pub postproc: Option<fn (&'static dyn Any) -> &'static dyn Any>,
+        pub postproc: Option<fn (&'a dyn Any) -> &'a dyn Any>,
         pub endlogic: Option<fn()>,
     }
     
 
-    impl CLI{
+    impl<'a> CLI<'a>{
 
         fn __DEFAULT_PREPROC(mut args: Vec<String>) -> Vec<String>{
             args.remove(0);
@@ -34,7 +34,7 @@ pub mod Helper{
             self.preproc = Some(fxn);
         }
 
-        pub fn set_postproc(&mut self,fxn: fn (&'static dyn Any) -> &'static dyn Any){
+        pub fn set_postproc(&mut self,fxn: fn (&'a dyn Any) -> &'a dyn Any){
             self.postproc = Some(fxn);
         }
 
@@ -47,32 +47,32 @@ pub mod Helper{
         }
 
 
-        pub fn add_flag(&mut self,arg_name:&'static str,flags:(Vec<&'static str>,fn(&'static dyn Any) -> &'static dyn Any),default_val: &'static dyn Any){
+        pub fn add_flag(&mut self,arg_name:&'a str,flags:(Vec<&'a str>,for<'b> fn(&'b dyn Any) -> &'b dyn Any),default_val: &'a dyn Any){
             self.args.insert(arg_name.to_string(), default_val);
             self.flag_map.insert(arg_name.to_string(),flags);
         } 
 
-        pub fn add_params(&mut self,params: Vec<(&'static str,fn (&str) -> &'static dyn Any,&'static dyn Any)>) {
+        pub fn add_params(&mut self,params: Vec<(&'a str,fn (&str) -> &'a dyn Any,&'a dyn Any)>) {
             for i in &params{
                 self.args.insert(i.0.to_string(), i.2);
                 self.parse_map.insert(i.0,i.1);
             }
         } 
 
-        pub fn add_flags(&mut self,flags:Vec<(&'static str,(Vec<&'static str>,fn(&'static dyn Any) -> &'static dyn Any),&'static dyn Any)>){
+        pub fn add_flags(&mut self,flags:Vec<(&'a str,(Vec<&'a str>,for<'b> fn(&'b dyn Any) -> &'b dyn Any),&'a dyn Any)>){
             for i in &flags{
                 self.args.insert(i.0.to_string(), i.2);
                 self.flag_map.insert(i.0.to_string(),i.1.clone());
             }
         } 
 
-        pub fn add_param(&mut self,arg_name:&'static str,cust_str_fxn: fn (&str) -> &'static dyn Any,default_val: &'static dyn Any) {
+        pub fn add_param(&mut self,arg_name:&'a str,cust_str_fxn: fn (&str) -> &'a dyn Any,default_val: &'a dyn Any) {
             self.args.insert(arg_name.to_string(), default_val);
             self.parse_map.insert(arg_name,cust_str_fxn);
         } 
 
 
-        pub fn add_arg(&mut self,arg_name:&'static str,flags:Option<(Vec<&'static str>,fn(&'static dyn Any) -> &'static dyn Any)>,default_val: &'static dyn Any,cust_str_fxn: Option<fn (&str) -> &'static dyn Any>){
+        pub fn add_arg(&mut self,arg_name:&'a str,flags:Option<(Vec<&'a str>,for<'b> fn(&'b dyn Any) -> &'b dyn Any)>,default_val: &'a dyn Any,cust_str_fxn: Option<fn (&str) -> &'a dyn Any>){
             self.args.insert(arg_name.to_string(), default_val);        
             if let Some(x) = flags{
                 self.flag_map.insert(arg_name.to_string(), x);
@@ -81,13 +81,13 @@ pub mod Helper{
             }
         }
 
-        pub fn add_args(&mut self,args:Vec<(&'static str,Option<(Vec<&'static str>,fn(&'static dyn Any) -> &'static dyn Any)>,&'static dyn Any,Option<fn (&str) -> &'static dyn Any>)>){
+        pub fn add_args(&mut self,args:Vec<(&'a str,Option<(Vec<&'a str>,for<'b> fn(&'b dyn Any) -> &'b dyn Any)>,&'a dyn Any,Option<fn (&str) -> &'a dyn Any>)>){
             for i in &args{
                 self.add_arg(i.0, i.1.clone(), i.2, i.3);
             }
         }
 
-        pub fn Parse_Args(args:Vec<(&'static str,Option<(Vec<&'static str>,fn(&'static dyn Any) -> &'static dyn Any)>,&'static dyn Any,Option<fn (&str) -> &'static dyn Any>)>) -> CLI{
+        pub fn Parse_Args(args:Vec<(&'a str,Option<(Vec<&'a str>,for<'b> fn(&'b dyn Any) -> &'b dyn Any)>,&'a dyn Any,Option<fn (&str) -> &'a dyn Any>)>) -> CLI{
             let mut ret = CLI::new();
             ret.add_args(args);
             ret.Parse();
